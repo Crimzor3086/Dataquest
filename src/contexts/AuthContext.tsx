@@ -122,23 +122,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        }
+      });
+      
+      if (error) {
+        console.error('Google OAuth error:', error);
+        return { error };
       }
-    });
-    return { error };
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('Google OAuth exception:', error);
+      return { error: { message: 'Failed to initiate Google sign-in. Please try again.' } };
+    }
   };
 
   const signInWithGitHub = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${window.location.origin}/`
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          scopes: 'user:email'
+        }
+      });
+      
+      if (error) {
+        console.error('GitHub OAuth error:', error);
+        return { error };
       }
-    });
-    return { error };
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('GitHub OAuth exception:', error);
+      return { error: { message: 'Failed to initiate GitHub sign-in. Please try again.' } };
+    }
   };
 
   const signOut = async () => {

@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Github } from 'lucide-react';
+import { Eye, EyeOff, Github, Settings } from 'lucide-react';
+import OAuthStatusChecker from '@/components/OAuthStatusChecker';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,6 +20,7 @@ const Auth = () => {
   const [oauthLoading, setOAuthLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showOAuthChecker, setShowOAuthChecker] = useState(false);
 
   const { signIn, signUp, signInWithGoogle, signInWithGitHub, user } = useAuth();
   const navigate = useNavigate();
@@ -85,12 +87,20 @@ const Auth = () => {
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        toast.error(error.message);
+        console.error('Google OAuth Error:', error);
+        if (error.message?.includes('Invalid redirect URI') || error.message?.includes('Client ID')) {
+          toast.error('Google OAuth is not properly configured. Please contact support.');
+        } else {
+          toast.error(error.message || 'Failed to sign in with Google. Please try again.');
+        }
       } else {
         toast.success('Redirecting to Google...');
+        // Don't set loading to false here as we're redirecting
+        return;
       }
     } catch (error: any) {
-      toast.error('An unexpected error occurred');
+      console.error('Google OAuth Exception:', error);
+      toast.error('An unexpected error occurred while signing in with Google.');
     } finally {
       setOAuthLoading(false);
     }
@@ -101,12 +111,20 @@ const Auth = () => {
     try {
       const { error } = await signInWithGitHub();
       if (error) {
-        toast.error(error.message);
+        console.error('GitHub OAuth Error:', error);
+        if (error.message?.includes('Invalid redirect URI') || error.message?.includes('Client ID')) {
+          toast.error('GitHub OAuth is not properly configured. Please contact support.');
+        } else {
+          toast.error(error.message || 'Failed to sign in with GitHub. Please try again.');
+        }
       } else {
         toast.success('Redirecting to GitHub...');
+        // Don't set loading to false here as we're redirecting
+        return;
       }
     } catch (error: any) {
-      toast.error('An unexpected error occurred');
+      console.error('GitHub OAuth Exception:', error);
+      toast.error('An unexpected error occurred while signing in with GitHub.');
     } finally {
       setOAuthLoading(false);
     }
@@ -134,7 +152,21 @@ const Auth = () => {
             }
           </CardDescription>
           <div className="text-xs text-blue-300 mt-2">
-            OAuth providers need to be configured in Supabase Dashboard
+            OAuth providers need to be configured in Supabase Dashboard.
+            <br />
+            <span className="text-yellow-400">
+              If buttons don't work, OAuth apps need to be set up.
+            </span>
+            <br />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowOAuthChecker(true)}
+              className="text-blue-400 hover:text-blue-300 p-0 h-auto mt-1"
+            >
+              <Settings className="w-3 h-3 mr-1" />
+              Check OAuth Status
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -284,6 +316,11 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* OAuth Status Checker Modal */}
+      {showOAuthChecker && (
+        <OAuthStatusChecker onClose={() => setShowOAuthChecker(false)} />
+      )}
     </div>
   );
 };
